@@ -298,7 +298,7 @@ def getagentLLMToolmapping(df):
                 city = attrs.get("city")
                 latitude = attrs.get("latitude")
                 longitude = attrs.get("longitude")
-
+                ip = attrs.get("ip")
                 if country_name:
                     timestamp = (
                         row.get('start_time').tz_convert('Asia/Kolkata')
@@ -310,7 +310,8 @@ def getagentLLMToolmapping(df):
                         "city": city or "",
                         "latitude": latitude,
                         "longitude": longitude,
-                        "timestamp": timestamp
+                        "timestamp": timestamp,
+                        "Client_ip": ip
                     })
     # Convert the result into a DataFrame
     llm_parent_links_df = pd.DataFrame(llm_parent_links)
@@ -715,19 +716,19 @@ def extract_agent_data(agent_data_raw):
         else:
             input_norm = {}
 
-        # tools_raw = (input_norm.get("tools") if isinstance(input_norm, dict) else None) \
-        #             or agent_obj.get("tools") \
-        #             or []
-        # tools = []
-        # if isinstance(tools_raw, list):
-        #     for t in tools_raw:
-        #         if isinstance(t, str):
-        #             m = re.search(r"name='(.*?)'", t)
-        #             tools.append(m.group(1) if m else t)
-        #         elif isinstance(t, dict):
-        #             nm = t.get("name") or t.get("tool_name") or t.get("id")
-        #             if nm:
-        #                 tools.append(nm)
+        tools_raw = (input_norm.get("tools") if isinstance(input_norm, dict) else None) \
+                    or agent_obj.get("tools") \
+                    or []
+        tools = []
+        if isinstance(tools_raw, list):
+            for t in tools_raw:
+                if isinstance(t, str):
+                    m = re.search(r"name='(.*?)'", t)
+                    tools.append(m.group(1) if m else t)
+                elif isinstance(t, dict):
+                    nm = t.get("name") or t.get("tool_name") or t.get("id")
+                    if nm:
+                        tools.append(nm)
 
         input_goal = ""
         if isinstance(input_norm, dict):
@@ -753,7 +754,7 @@ def extract_agent_data(agent_data_raw):
             output_raw
 
         agent_data_map[name] = {
-            # "tools": tools,
+            "tools": tools,
             "input_summary": input_goal,
             "output_summary": output_summary,
         }
