@@ -105,19 +105,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 llm = LLMQueries()
 
-#st.markdown("<div class='boxed-section'><h5 style='margin: 0;'>LLM Observability Dashboard</h5></div>", unsafe_allow_html=True)
-
-# st.markdown("""
-# <div style='background-color:lightblue; padding:1px 1px; border-radius:1px; margin-bottom:1px'>
-#     <h5 style='margin:0; font-size:19px;'>Tredence Agent Ops Platform</h5>
-# </div>
-# """, unsafe_allow_html=True)
-# st.markdown("""
-#     <div style='background-color:lightblue; padding:10px; border-radius:5px; margin-bottom:10px'>
-#         <h5 style='margin:0; font-size:19px; color:black;'>Tredence Agent Ops Platform</h5>
-#     </div>
-# """, unsafe_allow_html=True)
-
 st.markdown("""
 <div style='background-color:lightblue; padding:12px 16px; border-radius:0px; margin:0; position: relative; top: 0;'>
     <h5 style='margin:0; font-size:20px; font-weight:700; color:black;'>Tredence Agent Ops Platform</h5>
@@ -431,104 +418,29 @@ with chart_col2:
             else:
                 st.markdown("&nbsp;", unsafe_allow_html=True)  
 
+st.markdown("Trace Info Data")
 processed_df=process_trace_data(model_df, agent_tool_df)
 exclude_cols = ["agent_data", "agent_tool_latency", "agent_tool_mapping"]
 st.dataframe(processed_df.drop(columns=exclude_cols, errors="ignore"),
                  use_container_width=True,hide_index=True,height=300)
-# st.dataframe(processed_df,
-#                  use_container_width=True,hide_index=True,height=300)
-
-# # --- Interactive Bar Chart for LLM calls ---
-# st.markdown("LLM Calls Breakdown by Trace ID")
-
-# trace_ids = sorted(processed_df["trace_id"].unique())
-# selected_trace_id = st.selectbox("Select Trace ID", trace_ids)
-
-# row = processed_df[processed_df["trace_id"] == selected_trace_id].iloc[0]
-# llm_calls = row["LLM calls"]
-
-# models, counts = [], []
-# for part in str(llm_calls).split(";"):
-#     part = part.strip()
-#     if "-" in part:
-#         k, v = part.rsplit("-", 1)
-#         try:
-#             models.append(k.strip())
-#             counts.append(int(v))
-#         except ValueError:
-#             pass
-
-# if models:
-#     bar_df = pd.DataFrame({"Model": models, "Count": counts})
-#     bar_df["Count"] = bar_df["Count"].astype(int)
-
-#     # === BAR CHART (force go.Bar) ===
-#     fig = go.Figure()
-#     colors = px.colors.qualitative.Set2
-
-#     for i, row_bar in bar_df.iterrows():
-#         fig.add_trace(
-#             go.Bar(
-#                 x=[row_bar["Model"]],
-#                 y=[row_bar["Count"]],
-#                 name=row_bar["Model"],
-#                 marker_color=colors[i % len(colors)],
-#                 text=[row_bar["Count"]],
-#                 textposition="outside"
-#             )
-#         )
-
-#     fig.update_layout(
-#         barmode="group",
-#         transition_duration=0,
-#         xaxis_title="Model",
-#         yaxis_title="Number of Calls",
-#         yaxis=dict(autorange=True)
-#     )
-
-#     clicked = plotly_events(
-#         fig,
-#         click_event=True,
-#         hover_event=False,
-#         select_event=False,
-#         override_height=500,
-#         override_width="100%",
-#         key="bar_click"
-#     )
-
-#     if clicked:
-#         model_name = clicked[0]["x"]
-
-#         latency_map = {k.strip(): v.strip() for k,v in (p.split("-",1) for p in row["latency"].split(";"))}
-#         tokens_map = {k.strip(): v.strip() for k,v in (p.rsplit("-",1) for p in row["agent_token_usage"].split(";"))}
-
-#         st.markdown("---")
-#         st.subheader(f"Details for **{model_name}**")
-#         c1, c2 = st.columns(2)
-#         c1.metric("Latency", latency_map.get(model_name, "N/A"))
-#         c2.metric("Token Usage", tokens_map.get(model_name, "N/A"))
-
-# else:
-#     st.warning("No valid LLM calls found for this trace.")
-
 
 # ---------- Streamlit App ----------
 st.set_page_config(page_title="LLM Calls per Trace ID", layout="wide")
 # --- Layout with 2 columns ---
 col1, col2 = st.columns(2, border=True)
 
+# ---------- UI in col1: Bar chart -> Agent details -> Agent flow ----------
 with col1:
     st.markdown("LLM Calls per Trace ID")
 
     trace_ids = sorted(processed_df["trace_id"].unique())
     selected_trace_id = st.selectbox("Select Trace ID", trace_ids)
-
+    # fetch the selected trace row
     row = processed_df[processed_df["trace_id"] == selected_trace_id].iloc[0]
-    llm_calls = row["LLM calls"]
-
-    # Parse calls: agent/model names and counts
+    # 1) Bar chart (LLM Calls)
+    llm_calls_raw = row.get("LLM calls", "")
     models, counts = [], []
-    for part in str(llm_calls).split(";"):
+    for part in str(llm_calls_raw).split(";"):
         part = part.strip()
         if "-" in part:
             k, v = part.rsplit("-", 1)
@@ -540,58 +452,31 @@ with col1:
 
     if not models:
         st.warning("No valid LLM calls found for this trace.")
+        clicked = []
     else:
-        # Parse latency per agent/model
+        # build latency/tokens maps (same parsing logic you already have)
         latency_map = {}
-        for p in row["latency"].split(";"):
+        for p in str(row.get("latency", "")).split(";"):
             p = p.strip()
             if "-" in p:
                 k, v = p.split("-", 1)
                 latency_map[k.strip()] = v.strip()
 
-        # Parse tokens per agent/model
         tokens_map = {}
-        for p in row["agent_token_usage"].split(";"):
+        for p in str(row.get("agent_token_usage", "")).split(";"):
             p = p.strip()
             if "-" in p:
                 k, v = p.rsplit("-", 1)
                 try:
                     tokens_map[k.strip()] = f"{int(v):,}"
-                except ValueError:
+                except Exception:
                     tokens_map[k.strip()] = v.strip()
 
-        # # Parse tool names for entire trace (common to all agents)
-        # tool_names_map = {}
-        # tool_names_list = []
-        # if pd.notna(row.get("tool_names", None)):
-        #     tool_names_list = [t.strip() for t in str(row["tool_names"]).split(",") if t.strip()]
-        #     tool_names_str = ", ".join(tool_names_list)
-        #     tool_names_map = {m: tool_names_str for m in models}
-
-        # # Parse tool latency for entire trace (common to all agents)
-
-        # # Tool latency list
-        # tool_latency_raw = row.get("tool_latency", "")
-        # tool_latency_list = []
-        # if pd.notna(tool_latency_raw):
-        #     tool_latency_list = [t.strip() for t in tool_latency_raw.split(";") if t.strip()]
-
-        # --- Parse Agent Tool Latency ---
-        agent_tool_latency_raw = row.get("agent_tool_latency", "")
-        agent_tool_latency_map = parse_agent_tool_latency(agent_tool_latency_raw)
-        agent_data_map = extract_agent_data(row.get("agent_data", []))
-
-        # --- Plotly bar chart ---
         colors = px.colors.qualitative.Plotly
         fig = go.Figure()
 
         for i, (m, c) in enumerate(zip(models, counts)):
-            customdata = [[
-                latency_map.get(m, "—"),
-                tokens_map.get(m, "—"),
-                # tool_names_map.get(m, "—"),
-                # tool_latency_map_all.get(m, "—")
-            ]]
+            customdata = [[latency_map.get(m, "—"), tokens_map.get(m, "—")]]
             fig.add_trace(go.Bar(
                 x=[m],
                 y=[int(c)],
@@ -601,12 +486,9 @@ with col1:
                 textposition="outside",
                 customdata=customdata,
                 hovertemplate=(
-                    "<b>%{x}</b><br>" +
-                    "Calls: %{y}<br>" +
-                    "Latency: %{customdata[0]}<br>" +
-                    "Tokens: %{customdata[1]}<br>" +
-                    # "Agent Tool Latency: %{customdata[2]}<br>" +
-                    "<extra></extra>"
+                    "<b>%{x}</b><br>Calls: %{y}<br>"
+                    "Latency: %{customdata[0]}<br>"
+                    "Tokens: %{customdata[1]}<extra></extra>"
                 )
             ))
 
@@ -614,7 +496,8 @@ with col1:
             title=f"LLM Calls for Trace {selected_trace_id}",
             barmode="group",
             xaxis_title="Agent/Model",
-            yaxis_title="Number of Calls"
+            yaxis_title="Number of Calls",
+            height=500
         )
 
         clicked = plotly_events(
@@ -624,73 +507,81 @@ with col1:
             select_event=False,
             override_height=500,
             override_width="100%",
-            key="bar_click"
+            key=f"bar_click_{selected_trace_id}"
         )
 
-        if clicked:
-            selected_agent = clicked[0].get("x")
-            st.markdown("---")
-            st.subheader(f"Details for **{selected_agent}**")
+    # 2) Click handler: Agent details (render BELOW the chart)
+    if clicked:
+        selected_agent = clicked[0].get("x")
+        st.markdown("---")
+        st.subheader(f"Details for **{selected_agent}**")
 
-            # Latency and tokens per clicked agent/model
-            lat_val = latency_map.get(selected_agent, "N/A")
-            tok_val = tokens_map.get(selected_agent, "N/A")
-            # tool_val = tool_names_map.get(selected_agent, "N/A")
+        # Parse agent_tool_latency and agent_data (use your existing helpers)
+        agent_tool_latency_map = parse_agent_tool_latency(row.get("agent_tool_latency", ""))
+        agent_data_map = extract_agent_data(row.get("agent_data", []))
 
-            with st.container():
-                c1, c2, c3 = st.columns([1,1,2])
-                with c1.expander("Agent Latency"):
-                    st.markdown(f"<div style='font-size: 20px;'>{lat_val}</div>", unsafe_allow_html=True)
-                with c2.expander("Token Usage"):
-                    st.markdown(f"<div style='font-size: 20px;'>{tok_val}</div>", unsafe_allow_html=True)
-                with c3:
-                    with st.expander("Tool Latency"):
-                        agent_tools = agent_tool_latency_map.get(selected_agent)
-                        if agent_tools:
-                            for tool, metrics in agent_tools.items():
-                                st.markdown(f"**{tool}**")
-                                st.markdown(f"- Mean: {metrics['mean']}")
-                                st.markdown(f"- 90th Percentile: {metrics['p90']}")
-                                st.markdown(f"- Count: {metrics['count']}")
-                                st.markdown("---")  # separator
-                        else:
-                            st.markdown("No tool latency data available for this agent.")
+        lat_val = latency_map.get(selected_agent, "N/A")
+        tok_val = tokens_map.get(selected_agent, "N/A")
 
-                # with c4.expander("Tool Latency"):
-                #     if tool_latency_list:
-                #         tool_lines = "\n".join([f"- {t}" for t in tool_latency_list])
-                #         st.markdown(tool_lines)
-                #     else:
-                #         st.markdown("No tool latency data available.")
-
-                # with c5.expander("Tool Names"):
-                #     if tool_val != "N/A":
-                #         tool_lines = "\n".join([f"- {t.strip()}" for t in tool_val.split(",") if t.strip()])
-                #         st.markdown(tool_lines)
-                #     else:
-                #         st.markdown("No tool names data available.")
-
-            with st.container():
-                with st.expander("Agent Data Details", expanded=False):
-                    agent_details = agent_data_map.get(selected_agent)
-                    if agent_details:
-                        st.markdown(f"### {selected_agent}")
-
-                        if agent_details.get("input_summary"):
-                            st.markdown(f"**Input Goal:** {agent_details['input_summary']}")
-                        output_summary = agent_details.get("output_summary")
-                        if output_summary is not None: 
-                            st.markdown("**Output:**")
-                            st.write(output_summary)
-                        if agent_details.get("tools"):
-                            tool_list = ", ".join(agent_details["tools"])
-                            st.markdown(f"**Tools Used:** {tool_list}")
-                        st.markdown("---")
+        # show compact panels in a row
+        with st.container():
+            c1, c2, c3 = st.columns([1,1,2])
+            with c1.expander("Agent Latency"):
+                st.markdown(f"<div style='font-size: 18px;'>{lat_val}</div>", unsafe_allow_html=True)
+            with c2.expander("Token Usage"):
+                st.markdown(f"<div style='font-size: 18px;'>{tok_val}</div>", unsafe_allow_html=True)
+            with c3:
+                with st.expander("Tool Latency"):
+                    agent_tools = agent_tool_latency_map.get(selected_agent)
+                    if agent_tools:
+                        for tool, metrics in agent_tools.items():
+                            st.markdown(f"**{tool}**")
+                            st.markdown(f"- Mean: {metrics.get('mean', '—')}")
+                            st.markdown(f"- 90th Percentile: {metrics.get('p90', '—')}")
+                            st.markdown(f"- Count: {metrics.get('count', '—')}")
+                            st.markdown("---")
                     else:
-                        st.markdown("No `agent_data` available for this trace.")
+                        st.markdown("No tool latency data available for this agent.")
 
-    # else:
-    #     st.warning("No valid LLM calls found for this trace.")
+        # Agent data details
+        with st.container():
+            with st.expander("Agent Data Details", expanded=False):
+                agent_details = agent_data_map.get(selected_agent)
+                if agent_details:
+                    if agent_details.get("input_summary"):
+                        st.markdown(f"**Input Goal:** {agent_details['input_summary']}")
+                    output_summary = agent_details.get("output_summary")
+                    if output_summary:
+                        st.markdown("**Output:**")
+                        st.write(output_summary)
+                    if agent_details.get("tools"):
+                        tool_list = ", ".join(agent_details["tools"])
+                        st.markdown(f"**Tools Available:** {tool_list}")
+                else:
+                    st.markdown("No `agent_data` available for this agent.")
+
+    # 3) Always render full Agent -> Tool flow (Mermaid) AFTER details
+    st.markdown("---")
+    st.markdown("Agent Tool Flow")
+    agent_tool_mapping = row.get("agent_tool_mapping", "")
+    if agent_tool_mapping:
+        # Build and render the full flow (use your existing builder)
+        full_mermaid_code = build_agent_tool_mermaid(agent_tool_mapping, trace_id=selected_trace_id)
+        st.components.v1.html(
+            f"""
+            <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+            <div class="mermaid">
+            {full_mermaid_code}
+            </div>
+            <script>
+            mermaid.initialize({{ startOnLoad: true }});
+            </script>
+            """,
+            height=420,
+            scrolling=True,
+        )
+    else:
+        st.info("No Agent Tool Mapping available for this trace.")
 
 
 with col2:
@@ -855,14 +746,13 @@ with col2:
                 fig_city.update_layout(xaxis_tickangle=-30, xaxis={'categoryorder':'total descending'}, showlegend=False)
                 st.plotly_chart(fig_city, use_container_width=True)
 
+    # --- Bubble map visualization (aggregated) ---
     st.markdown("---")
     st.markdown("Map visualization")
-    # --- Map visualization ---
-    if has_latlon and df_work[["latitude", "longitude"]].dropna().shape[0] > 0:
-        # scatter points on map using OpenStreetMap tiles (no token)
-        df_map = df_work.dropna(subset=["latitude", "longitude"]).copy()
 
-        # ensure numeric lat/lon
+    if has_latlon and df_work[["latitude", "longitude"]].dropna().shape[0] > 0:
+        # make a working copy and ensure numeric lat/lon
+        df_map = df_work.dropna(subset=["latitude", "longitude"]).copy()
         df_map["latitude"] = pd.to_numeric(df_map["latitude"], errors="coerce")
         df_map["longitude"] = pd.to_numeric(df_map["longitude"], errors="coerce")
         df_map = df_map.dropna(subset=["latitude", "longitude"]).reset_index(drop=True)
@@ -870,117 +760,92 @@ with col2:
         if df_map.empty:
             st.info("No valid lat/lon points to plot on map.")
         else:
-            # build hover text column (must exist as a column name)
-            df_map["hover_text"] = df_map.apply(
-                lambda r: f"{r.get('country_name','')}, {r.get('region','')}, {r.get('city','')} — trace:{r.get('trace_id')}",
-                axis=1
+            # AGGREGATE: group by coordinates (and keep country/region/city for hover/color)
+            agg_cols = ["latitude", "longitude", "country_name", "region", "city","Client_ip"]
+            # keep only columns that exist
+            agg_cols = [c for c in agg_cols if c in df_map.columns]
+
+            # group and count occurrences as bubble size
+            grouped = (
+                df_map.groupby(agg_cols)
+                    .size()
+                    .reset_index(name="count")
+                    .sort_values("count", ascending=False)
             )
+
+            # build hover data (structured)
+            hover_cols = [c for c in ["country_name", "region", "city"] if c in grouped.columns]
+            hover_data = {c: True for c in hover_cols}
+            hover_data["count"] = True
+            # include sample trace_id if available (take first)
+            if "trace_id" in df_map.columns:
+                sample_tid = (
+                    df_map.groupby(agg_cols)["trace_id"]
+                        .first()
+                        .reset_index(name="sample_trace_id")
+                )
+                grouped = grouped.merge(sample_tid, on=agg_cols, how="left")
+                hover_data["sample_trace_id"] = True
 
             # compute center and zoom
-            center_lat = float(df_map["latitude"].mean())
-            center_lon = float(df_map["longitude"].mean())
-            unique_coords = df_map[["latitude", "longitude"]].drop_duplicates().shape[0]
-            zoom_level = 8 if unique_coords == 1 else 2  # zoom in if single point
+            center_lat = float(grouped["latitude"].mean())
+            center_lon = float(grouped["longitude"].mean())
+            unique_coords = grouped[["latitude", "longitude"]].drop_duplicates().shape[0]
+            zoom_level = 8 if unique_coords == 1 else 2
 
-            # let user pick color dimension (only if column exists)
-            color_choice = "country_name" if "country_name" in df_map.columns else None
+            # let user choose color dimension (if available)
+            color_options = [c for c in ["country_name", "region", "city"] if c in grouped.columns]
+            color_choice = st.selectbox("Color bubbles by", ["count"] + color_options, index=0)
 
+            # Make bubble map: size scaled by 'count'
             fig_map = px.scatter_map(
-                df_map,
+                grouped,
                 lat="latitude",
                 lon="longitude",
-                hover_name="hover_text",   
-                color=color_choice,
+                size="count",
+                size_max=40,                # max bubble size (tweak as needed)
+                # color=(color_choice if color_choice in grouped.columns else None),
+                color = 'count',
+                color_continuous_scale=px.colors.sequential.Viridis,  # vivid continuous scale
+                hover_name=None,           
+                hover_data=hover_data,
                 zoom=zoom_level,
                 center={"lat": center_lat, "lon": center_lon},
-                height=600
+                height=650,
+                title="Bubble map (size = occurrences)"
             )
-
-            # make markers visible
+            # increase visibility of markers (sizemode area)
             fig_map.update_traces(
-                marker=dict(color="blue", size=12, opacity=0.9, symbol="circle"),
+                marker=dict(opacity=0.65),
                 selector=dict(mode="markers")
             )
-
-            fig_map.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
+            fig_map.update_layout(margin={"r":0,"t":40,"l":0,"b":0})
             st.plotly_chart(fig_map, use_container_width=True)
+            # Optional: show aggregated table for transparency
+            st.markdown("---")
+            # if st.checkbox("Summary Table (top 50)", key="show_agg"):
+            with st.expander("Summary Table (top 50)", expanded=False):
+                st.dataframe(grouped.head(50).reset_index(drop=True),
+                    use_container_width=True,hide_index=True,height=300)
 
     else:
-        # fallback: choropleth across countries using country_name
-        if "country_name" not in df_work.columns or df_work["country_name"].dropna().empty:
-            st.info("No lat/lon and no country_name available for map rendering.")
-        else:
-            country_counts = agg_counts(df_work, "country_name")
-            # Plotly choropleth supports country names directly
+        country_counts["country_name"] = country_counts["country_name"].astype(str)
+        try:
             fig_choro = px.choropleth(
                 country_counts,
                 locations="country_name",
                 locationmode="country names",
                 color="count",
                 hover_name="country_name",
+                hover_data=["count"],
                 title="Country-level distribution (choropleth)",
-                color_continuous_scale=px.colors.sequential.Plasma
+                color_continuous_scale=px.colors.sequential.Plasma,
             )
-            fig_choro.update_layout(margin={"r":0,"t":40,"l":0,"b":0})
+            fig_choro.update_geos(showframe=False, showcoastlines=True, projection_type="natural earth")
+            fig_choro.update_layout(margin={"r":0,"t":40,"l":0,"b":0}, coloraxis_colorbar=dict(title="Count"))
             st.plotly_chart(fig_choro, use_container_width=True)
+        except Exception as e:
+            # fallback: show a simple bar chart if choropleth fails (e.g., bad country names)
+            st.warning(f"Choropleth failed: {e}. Showing fallback bar chart.")
+            st.bar_chart(country_counts.set_index("country_name")["count"])
 
-    st.markdown("---")
-    st.markdown("### Summary tables")
-    # --- Summary tables (Country, Region, City) side by side ---
-    sc1, sc2, sc3 = st.columns([1,1,1])
-    with sc1:
-        st.markdown("**Country summary**")
-        if "country_name" in df_work.columns and not df_work["country_name"].dropna().empty:
-            country_summary = agg_counts(df_work, "country_name")
-            st.dataframe(country_summary.reset_index(drop=True))
-            csv_bytes = df_to_csv_bytes(country_summary)
-            st.download_button("Download country CSV", csv_bytes, file_name="country_summary.csv", mime="text/csv")
-        else:
-            st.info("No country data")
-
-    with sc2:
-        st.markdown("**Region summary**")
-        if "region" in df_work.columns and not df_work["region"].dropna().empty:
-            region_summary = agg_counts(df_work, "region")
-            st.dataframe(region_summary.reset_index(drop=True))
-            st.download_button("Download region CSV", df_to_csv_bytes(region_summary), file_name="region_summary.csv", mime="text/csv")
-        else:
-            st.info("No region data")
-
-    with sc3:
-        st.markdown("**City summary**")
-        if "city" in df_work.columns and not df_work["city"].dropna().empty:
-            city_summary = agg_counts(df_work, "city")
-            st.dataframe(city_summary.reset_index(drop=True))
-            st.download_button("Download city CSV", df_to_csv_bytes(city_summary), file_name="city_summary.csv", mime="text/csv")
-        else:
-            st.info("No city data")
-
-
-# === Mermaid Graph Section ===
-st.markdown("Agent Tool Flow")
-
-# Select trace_id filter
-trace_ids = sorted(processed_df["trace_id"].unique())  
-selected_trace = st.selectbox("Select Trace", trace_ids)
-
-row = processed_df[processed_df["trace_id"] == selected_trace].iloc[0]
-agent_tool_mapping = row.get("agent_tool_mapping", "")
-
-if agent_tool_mapping:
-    mermaid_code = build_agent_tool_mermaid(agent_tool_mapping, trace_id=selected_trace)
-    st.components.v1.html(
-        f"""
-        <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-        <div class="mermaid">
-        {mermaid_code}
-        </div>
-        <script>
-        mermaid.initialize({{ startOnLoad: true }});
-        </script>
-        """,
-        height=600,
-        scrolling=True,
-    )
-else:
-    st.info("No Agent Tool Mapping available for this selection.")
