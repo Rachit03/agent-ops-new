@@ -15,9 +15,9 @@ st.set_page_config(layout="wide", page_title="TredenceAgentOpsAnalytics",page_ic
 st.markdown("""
 <style>
 /* General Layout */
-# .block-container {
-#     padding: 0rem 0.5rem 0.5rem 0.5rem;
-# }
+.block-container {
+    padding: 0rem 0.5rem 0.5rem 0.5rem;
+}
 
 /* Reusable Box Style */
 .dashboard-box {
@@ -106,9 +106,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 llm = LLMQueries()
 
-st.markdown("""
-        <h5>Tredence Agent Ops Platform</h5>
-""", unsafe_allow_html=True)
+# st.markdown("""
+#         <h5>Tredence Agent Ops Platform</h5>
+# """, unsafe_allow_html=True)
+st.title("Tredence Agent Ops Platform")
 
 with st.expander("Filters",expanded=True):
 # --- Filters Box ---
