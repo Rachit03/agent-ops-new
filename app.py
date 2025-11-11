@@ -107,6 +107,7 @@ llm = LLMQueries()
 
 st.markdown("""
     <style>
+        /* --- HEADER STYLING --- */
         .custom-header {
             background-color: lightblue;
             padding: 12px 16px;
@@ -114,14 +115,25 @@ st.markdown("""
             margin: 0;
             position: sticky;
             top: 0;
-            z-index: 998; /* below Streamlit’s sidebar toggle (999) */
+            z-index: 900; /* lower than sidebar toggle */
         }
         .custom-header h5 {
             margin: 0;
             font-size: 20px;
             font-weight: 700;
             color: black;
-            padding-left: 30px; /* push text right to avoid the sidebar toggle */
+            padding-left: 45px; /* extra space to keep clear of the sidebar toggle */
+        }
+
+        /* --- ENSURE SIDEBAR TOGGLE IS ALWAYS ABOVE HEADER --- */
+        [data-testid="collapsedControl"] {
+            z-index: 1001 !important;
+            position: relative;
+        }
+
+        /* OPTIONAL: add slight drop shadow to header */
+        .custom-header {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 
