@@ -5,5 +5,5 @@ matplotlib
 plotly
 graphviz
 streamlit-plotly-events
+langchain==0.3.27
 langchain_openai
-langchain
