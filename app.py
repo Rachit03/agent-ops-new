@@ -108,7 +108,7 @@ llm = LLMQueries()
 
 st.markdown("""
 <div style='background-color:lightblue; padding:12px 16px; border-radius:0px; margin:0; position: relative; top: 0;'>
-    <h5 style='margin:0; font-size:20px; font-weight:700; color:black;'>Tredence Agent Ops Platform</h5>
+    <h5 style='margin:45px 0px 0px 0px; font-size:20px; font-weight:700; color:black;'>Tredence Agent Ops Platform</h5>
 </div>
 """, unsafe_allow_html=True)
 
