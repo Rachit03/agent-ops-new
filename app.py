@@ -425,7 +425,7 @@ st.dataframe(processed_df.drop(columns=exclude_cols, errors="ignore"),
                  use_container_width=True,hide_index=True,height=300)
 
 # ---------- Streamlit App ----------
-st.set_page_config(page_title="LLM Calls per Trace ID", layout="wide")
+# st.set_page_config(page_title="LLM Calls per Trace ID", layout="wide")
 # --- Layout with 2 columns ---
 col1, col2 = st.columns(2, border=True)
 
