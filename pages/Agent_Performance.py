@@ -88,71 +88,72 @@ else:
 print(trend_df)
 # --- Visualization ---
 
-col1, col2 = st.columns(2)
 
-with col1:
-    # st.subheader(f"All Agents Trend ({period}) ")
-    st.markdown(
-    "### All Agents Trend",
-    help="This chart shows the average agent LLM score for all agents by week/month."
+# st.subheader(f"All Agents Trend ({period}) ")
+st.markdown(
+"### LLM Eval Metric – Agent Trend",
+help="This chart shows the average agent LLM score for all agents by week/month."
 )
-    line_chart = (
-        alt.Chart(trend_df)
-        .mark_line(point=True)
+line_chart = (
+    alt.Chart(trend_df)
+    .mark_line(point=True)
+    .encode(
+        # x=alt.X("period_label", title="Time Period", axis=alt.Axis(labelAngle=-45)),
+        x=alt.X(
+        "period_label:N",
+        title="Time Period",
+        sort=list(trend_df["period_label"].unique()),  # enforce sort order
+        axis=alt.Axis(labelAngle=-45)
+    ),
+
+        y=alt.Y("avg_llm_score:Q", title="Agent Eval Score"),
+        color=alt.Color("agent_name:N", title="Agent Name"),
+        detail="agent_name:N",
+        tooltip=["period_label", "agent_name", "avg_llm_score"]
+    )
+    # .properties(title=f"Agent Score Trend ({period})", width=800, height=400)
+)
+
+st.altair_chart(line_chart, use_container_width=True)
+
+st.markdown(
+
+"### Composite Metric- Agent Trend",
+help="This chart shows the average composite score for an agents by week/month based on LLM Eval Scire, latency, token used and error rate."
+)
+
+# st.subheader(f"Single Agent Trend ({period})")
+agent_list = sorted(trend_df["agent_name"].unique())
+default_agent = agent_list[0] if agent_list else None
+
+selected_agent = st.selectbox("Select an Agent to view specific trend:", agent_list, index=0)
+
+if selected_agent:
+    filtered_df = trend_df[trend_df["agent_name"] == selected_agent]
+
+    single_agent_chart = (
+        alt.Chart(filtered_df)
+        .mark_line(point=True, color="#0072B2")
         .encode(
             # x=alt.X("period_label", title="Time Period", axis=alt.Axis(labelAngle=-45)),
             x=alt.X(
-            "period_label:N",
-            title="Time Period",
-            sort=list(trend_df["period_label"].unique()),  # enforce sort order
-            axis=alt.Axis(labelAngle=-45)
-        ),
+        "period_label:N",
+        title="Time Period",
+        sort=list(trend_df["period_label"].unique()),  # enforce sort order
+        axis=alt.Axis(labelAngle=-45)
+    ),
 
-            y=alt.Y("avg_llm_score:Q", title="Agent Eval Score"),
-            color=alt.Color("agent_name:N", title="Agent Name"),
-            detail="agent_name:N",
-            tooltip=["period_label", "agent_name", "avg_llm_score"]
+            y=alt.Y("composite_score:Q", title="Agent Score"),
+            tooltip=["agent_name", "composite_score", "period_label"]
         )
-        # .properties(title=f"Agent Score Trend ({period})", width=800, height=400)
+        # .properties(title=f"{selected_agent} Trend ({period})", width=800, height=300)
     )
 
-    st.altair_chart(line_chart, use_container_width=True)
+    st.altair_chart(single_agent_chart, use_container_width=True)
 
-with col2:
-    st.markdown(
+st.markdown(
 
-    "### Single Agents Trend",
-    help="This chart shows the average normalized score for an agents by week/month based on LLM Eval Scire, latency, token used and error rate."
-)
-
-    # st.subheader(f"Single Agent Trend ({period})")
-    agent_list = sorted(trend_df["agent_name"].unique())
-    default_agent = agent_list[0] if agent_list else None
-
-    selected_agent = st.selectbox("Select an Agent to view specific trend:", agent_list, index=0)
-
-    if selected_agent:
-        filtered_df = trend_df[trend_df["agent_name"] == selected_agent]
-
-        single_agent_chart = (
-            alt.Chart(filtered_df)
-            .mark_line(point=True, color="#0072B2")
-            .encode(
-                # x=alt.X("period_label", title="Time Period", axis=alt.Axis(labelAngle=-45)),
-                x=alt.X(
-            "period_label:N",
-            title="Time Period",
-            sort=list(trend_df["period_label"].unique()),  # enforce sort order
-            axis=alt.Axis(labelAngle=-45)
-        ),
-
-                y=alt.Y("normalized_score:Q", title="Agent Score"),
-                tooltip=["agent_name", "normalized_score", "period_label"]
-            )
-            # .properties(title=f"{selected_agent} Trend ({period})", width=800, height=300)
-        )
-
-        st.altair_chart(single_agent_chart, use_container_width=True)
+"### Agent Metrics")
 
 if isinstance(summarized_df, pd.DataFrame) and not summarized_df.empty:
     st.dataframe(summarized_df, use_container_width=True, hide_index=True, height=300)
