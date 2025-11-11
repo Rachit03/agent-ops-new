@@ -106,11 +106,7 @@ st.markdown("""
 llm = LLMQueries()
 
 st.markdown("""
-
-
-    <div>
         <h5>Tredence Agent Ops Platform</h5>
-    </div>
 """, unsafe_allow_html=True)
 
 
