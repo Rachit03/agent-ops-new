@@ -15,9 +15,9 @@ st.set_page_config(layout="wide", page_title="TredenceAgentOpsAnalytics",page_ic
 st.markdown("""
 <style>
 /* General Layout */
-.block-container {
-    padding: 0rem 0.5rem 0.5rem 0.5rem;
-}
+# .block-container {
+#     padding: 0rem 0.5rem 0.5rem 0.5rem;
+# }
 
 /* Reusable Box Style */
 .dashboard-box {
