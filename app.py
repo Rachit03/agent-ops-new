@@ -58,9 +58,9 @@ h6 {
     margin-bottom: 6px;
 }
 /* Hide Streamlit's built-in header */
-header, [data-testid="stHeader"] {
-    display: none;
-}
+# header, [data-testid="stHeader"] {
+#     display: none;
+# }
 </style>
 """, unsafe_allow_html=True)
 st.markdown("""
