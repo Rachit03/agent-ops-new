@@ -9,6 +9,7 @@ from streamlit_plotly_events import plotly_events
 from collections import defaultdict
 import re
 import json 
+import altair as alt
 
 st.set_page_config(layout="wide", page_title="TredenceAgentOpsAnalytics",page_icon="logo.png")
 st.markdown("""
@@ -105,8 +106,30 @@ st.markdown("""
 """, unsafe_allow_html=True)
 llm = LLMQueries()
 
-st.markdown("Tredence Agent Ops Platform", unsafe_allow_html=True)
+st.markdown("""
+    <style>
+        .custom-header {
+            background-color: lightblue;
+            padding: 12px 16px;
+            border-radius: 0;
+            margin: 0;
+            position: sticky;
+            top: 0;
+            z-index: 998; /* below Streamlit’s sidebar toggle (999) */
+        }
+        .custom-header h5 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: black;
+            padding-left: 30px; /* push text right to avoid the sidebar toggle */
+        }
+    </style>
 
+    <div class='custom-header'>
+        <h5>Tredence Agent Ops Platform</h5>
+    </div>
+""", unsafe_allow_html=True)
 
 with st.expander("Filters",expanded=True):
 # --- Filters Box ---
