@@ -106,7 +106,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 llm = LLMQueries()
 
-st.title("Tredence Agent Ops Platform")
+st.markdown("""
+<div style='background-color:lightblue; padding:12px 16px; border-radius:0px; margin:0; position: relative; top: 0;'>
+    <h5 style='margin:0; font-size:20px; font-weight:700; color:black;'>Tredence Agent Ops Platform</h5>
+</div>
+""", unsafe_allow_html=True)
+
+
+# st.title("Tredence Agent Ops Platform")
 
 with st.expander("Filters",expanded=True):
 # --- Filters Box ---
