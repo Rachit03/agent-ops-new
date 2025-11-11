@@ -6,3 +6,4 @@ plotly
 graphviz
 streamlit-plotly-events
 langchain_openai
+langchain
