@@ -105,9 +105,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 llm = LLMQueries()
 
-st.markdown("""
-        <h5>Tredence Agent Ops Platform</h5>
-""", unsafe_allow_html=True)
+st.markdown("Tredence Agent Ops Platform", unsafe_allow_html=True)
 
 
 with st.expander("Filters",expanded=True):
